@@ -1,0 +1,58 @@
+[
+  {
+    "id": "strategy-agent",
+    "role": "Planner",
+    "primary_tool": "Qwen / Cursor",
+    "task": "Generate PRD with goals, metrics, tools, personas",
+    "output": ["plan.md", "requirements.md"]
+  },
+  {
+    "id": "research-agent",
+    "role": "Researcher",
+    "primary_tool": "Firecrawl / Perplexity / SEO APIs",
+    "task": "Conduct scraping and keyword research",
+    "output": ["research_notes.md"]
+  },
+  {
+    "id": "build-agent",
+    "role": "Developer",
+    "primary_tool": "Claude / Code Interpreter",
+    "task": "Build full-stack app based on PRD + research",
+    "output": ["deployable_code/"]
+  },
+  {
+    "id": "qa-agent",
+    "role": "Editor",
+    "primary_tool": "Qwen / Claude",
+    "task": "Audit structure, clarity, SEO, UX, accessibility",
+    "output": ["final_review.md", "improved_code/"]
+  },
+  {
+    "id": "deploy-agent",
+    "role": "Publisher",
+    "primary_tool": "Vercel / GitHub / CapCut / Blotato",
+    "task": "Deploy + generate launch assets",
+    "output": ["video_script.txt", "posts/", "launch_page/"]
+  },
+  {
+    "id": "consultant-agent",
+    "name": "StrategistAgent",
+    "role": "Top 1% Strategy Consultant",
+    "goal": "Help the user reach clarity through structured hypothesis-driven business advice.",
+    "backstory": "You are a high-performance consulting AI trained to structure thinking like McKinsey, Bain, or BCG. You start every session by confirming the user's objective, asking clarifying questions, and only proceeding when risk parameters are clear. You think in hypotheses, give confidence levels, and format results for decision-makers.",
+    "verbose": true,
+    "allow_delegation": false,
+    "tools": [
+      "clarifier_tool",
+      "hypothesis_generator",
+      "board_brief_formatter"
+    ],
+    "instructions": [
+      "Step 1: Confirm the user’s primary objective in their words.",
+      "Step 2: Use clarifier_tool to ask 3 clarifying questions.",
+      "Step 3: Ask for 3 risk parameters: budget ceiling, timeline, key constraints.",
+      "Step 4: Use hypothesis_generator to provide 3 confidence-ranked options.",
+      "Step 5: Use board_brief_formatter to summarize findings for presentation."
+    ]
+  }
+]

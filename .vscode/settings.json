@@ -1,0 +1,16 @@
+{
+    "python.analysis.exclude": [
+      "**/venv",
+      "**/__pycache__",
+      "**/.env",
+      "**/.venv"
+    ],
+    "files.exclude": {
+      "**/venv": true,
+      "**/__pycache__": true
+    },
+    "python.analysis.indexing": false,
+    "python.analysis.extraPaths": ["./venv/lib/python3.12/site-packages"],
+
+  
+  }
