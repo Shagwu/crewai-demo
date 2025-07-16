@@ -68,3 +68,19 @@ if __name__ == "__main__":
     print("\n💡 Final Output:\n", result)
 
     export_to_markdown(agent_name, result)
+
+    # Optional: Auto-commit + push result to GitHub
+import subprocess
+from datetime import datetime
+
+def auto_git_push():
+    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    try:
+        subprocess.run(["git", "add", "exports"], check=True)
+        subprocess.run(["git", "commit", "-m", f"Auto-export: {agent_name} result at {now}"], check=True)
+        subprocess.run(["git", "push"], check=True)
+        print("✅ Auto-pushed latest export to GitHub.")
+    except subprocess.CalledProcessError as e:
+        print(f"⚠️ Git push failed: {e}")
+
+auto_git_push()
