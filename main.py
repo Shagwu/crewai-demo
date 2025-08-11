@@ -1,37 +1,29 @@
-import sys
-import os
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
-from fastapi import FastAPI
-from pydantic import BaseModel
-from agents.run_agent import run_agent  # ✅ Direct import
-import litellm
-litellm.provider = "ollama"
-from dotenv import load_dotenv
-import os
+# main.py
+import requests
 
-load_dotenv()  # this loads the .env file into os.environ
+def chat_with_qwen(prompt):
+    url = "http://localhost:11434/api/chat"
+    payload = {
+        "model": "qwen:7b",
+        "stream": False,  # force Ollama to send one JSON object
+        "messages": [
+            {"role": "user", "content": prompt}
+        ]
+    }
 
-# Optional: confirm it worked
-print("Opik Key:", os.getenv("OPIK_API_KEY"))
-print("Workspace:", os.getenv("OPIK_WORKSPACE"))
-
-app = FastAPI()
-
-@app.get("/test")
-def test():
-    return {"message": "Server is running fine!"}
-
-class AgentInput(BaseModel):
-    url: str
-
-@app.post("/ask")
-def ask_agent(data: AgentInput):
     try:
-        results = run_agent(data.url)
-        return {
-            "summary": results[0],
-            "rewrite": results[1],
-            "strategy": results[2]
-        }
-    except Exception as e:
-        return {"error": str(e)}
+        response = requests.post(url, json=payload)
+        response.raise_for_status()
+        data = response.json()
+
+        if "message" in data and "content" in data["message"]:
+            return data["message"]["content"]
+        else:
+            return data
+    except requests.exceptions.RequestException as e:
+        return f"Error connecting to Ollama: {e}"
+
+if __name__ == "__main__":
+    prompt = "Say hello from Qwen"
+    answer = chat_with_qwen(prompt)
+    print("Qwen says:", answer)

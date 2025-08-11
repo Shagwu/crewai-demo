@@ -1,23 +1,51 @@
-from langchain.tools import BaseTool
-from deep_translator import GoogleTranslator
-from typing import Type
-from pydantic import BaseModel
+# tools.py
+from langchain_core.tools import StructuredTool
+from pydantic import BaseModel, Field
+import requests
+from bs4 import BeautifulSoup
+from crewai.tools import BaseTool
 
-# Define the input schema
-class TranslationInput(BaseModel):
-    text: str
+class ScrapeWebsiteInput(BaseModel):
+    url: str = Field(..., description="The URL to scrape. Must be a valid http or https link.")
 
-# Define the translation tool
-class TranslateToFrenchTool(BaseTool):
-    name: str = "translate_to_french"
-    description: str = "Translates a given English sentence into French"
-    args_schema: Type[BaseModel] = TranslationInput
+class CustomScrapeWebsiteTool(BaseTool):
+    name: str = "Read website content"
+    description: str = "Use this to scrape content from a website when researching mindful tech practices."
+    args_schema: type[BaseModel] = ScrapeWebsiteInput
 
-    def _run(self, text: str) -> str:
+    def _run(self, url: str) -> str:
         try:
-            return GoogleTranslator(source='auto', target='french').translate(text)
-        except Exception as e:
-            return f"Translation failed: {str(e)}"
+            # Clean and validate URL
+            url = url.strip().split()[0]
+            if not url.startswith("http"):
+                url = "https://" + url
 
-    def _arun(self, text: str):
-        raise NotImplementedError("Async not supported")
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+            }
+
+            response = requests.get(url, headers=headers, timeout=15)
+            response.raise_for_status()
+
+            soup = BeautifulSoup(response.content, 'html.parser')
+
+            # Remove unwanted elements
+            for element in soup(["script", "style", "nav", "footer", "aside", "header", "form"]):
+                element.decompose()
+
+            # Extract readable text
+            content = "\n".join([
+                element.get_text(strip=True)
+                for element in soup.find_all(["p", "h1", "h2", "h3"])
+                if len(element.get_text(strip=True)) > 20
+            ])
+
+            return content[:4000]  # Return top 4000 chars
+
+        except requests.exceptions.RequestException as e:
+            return f"Failed to fetch page: {str(e)}"
+        except Exception as e:
+            return f"Scraping error: {str(e)}"
+
+# Instantiate the tool
+scrape_tool = CustomScrapeWebsiteTool()

@@ -1,86 +1,30 @@
-import os
-import sys
-from datetime import datetime
-from crewai import Agent, Task, Crew
-from langchain_community.chat_models import ChatOllama
+from crewai import Crew, Task
+from agents.clarity_agent import clarity_agent  # Import your agent
+from tools_old.scraper_tool import ScraperTool  # If using a scraping tool
 
-# Load Ollama model
-llm = ChatOllama(model="mistral", temperature=0.2)
+response = clarity_agent.run("Summarize the main ideas from Marcus Aurelius' *Meditations*.")
+print(response)
 
-# Agents
-researcher = Agent(
-    role='AI Researcher',
-    goal='Discover breakthroughs in open-source LLMs',
-    backstory='You are a technical expert with deep understanding of recent LLM developments.',
-    llm=llm
-)
+def run_agent(url: str):
+    # Optional: you can use a tool to scrape the page content
+    scraper = ScraperTool()
+    content = scraper.scrape_from_url(url)
 
-strategist = Agent(
-    role='AI Strategist',
-    goal='Turn research into growth strategies for AI content or business',
-    backstory='You specialize in turning insights into content and branding moves.',
-    llm=llm
-)
+    # Define the task for the agent
+    task = Task(
+        description=f"Summarize the key ideas from this content:\n\n{content}",
+        expected_output="Return 3 responses: a summary, a rewritten version, and a strategy.",
+        agent=clarity_agent,
+        output_file="clarity_output.md"
+    )
 
-# Map task to agent
-def get_task(agent_name):
-    if agent_name == "researcher":
-        return Task(
-            description="List 3 important recent developments in open-source language models.",
-            expected_output="A list of 3 major open-source LLM projects with a one-line description each.",
-            agent=researcher,
-        )
-    elif agent_name == "strategist":
-        return Task(
-            description="Based on recent research, give 3 content or strategy moves for an AI personal brand.",
-            expected_output="3 tactical content or brand strategy ideas written clearly for LinkedIn or YouTube.",
-            agent=strategist,
-        )
-    else:
-        raise ValueError("Invalid agent name. Use 'researcher' or 'strategist'.")
-
-# Save to markdown
-def export_to_markdown(agent_name, result_text):
-    now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    filename = f"exports/{agent_name}_{now}.md"
-    with open(filename, "w") as f:
-        f.write(f"# Result from {agent_name.capitalize()} Agent\n")
-        f.write(f"**Timestamp**: {now}\n\n")
-        f.write("## Output\n")
-        f.write(result_text)
-    print(f"📁 Exported result to `{filename}`")
-
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python run_agent.py [researcher|strategist]")
-        sys.exit(1)
-
-    agent_name = sys.argv[1]
-    task = get_task(agent_name)
-
+    # Create the crew
     crew = Crew(
-        agents=[task.agent],
+        agents=[clarity_agent],
         tasks=[task],
         verbose=True
     )
 
+    # Run the crew and return the result
     result = crew.kickoff()
-    print("\n💡 Final Output:\n", result)
-
-    export_to_markdown(agent_name, result)
-
-    # Optional: Auto-commit + push result to GitHub
-import subprocess
-from datetime import datetime
-
-def auto_git_push():
-    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    try:
-        subprocess.run(["git", "add", "exports"], check=True)
-        subprocess.run(["git", "commit", "-m", f"Auto-export: {agent_name} result at {now}"], check=True)
-        subprocess.run(["git", "push"], check=True)
-        print("✅ Auto-pushed latest export to GitHub.")
-    except subprocess.CalledProcessError as e:
-        print(f"⚠️ Git push failed: {e}")
-
-auto_git_push()
+    return result.split("###")  # Optional: split into summary/rewrite/strategy
